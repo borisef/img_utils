@@ -20,25 +20,53 @@ def folders_in(path_to_parent):
             res.append(fname)
     return res
 
-def AugFolderInFoderOut(inputPath, inputWildcard,outputPath, augSeq, recurs):
+def AugFolderInFoderOut(inputPath, inputWildcard,outputPath, outputExt,  augSeq, recurs, numImagesToGenerate,augExtWithRandomInt = False):
     if (os.path.exists(outputPath) == False):
         os.mkdir(outputPath)
 
-    for fullImname in glob.glob(os.path.join(inputPath, inputWildcard)):
-        seq = augSeq
-        imname = os.path.basename(fullImname)
-        outName = os.path.join(outputPath, imname)
+    numImagesInFolder = len(glob.glob(os.path.join(inputPath, inputWildcard)))
+    numImagesInOutFolder = len(glob.glob(os.path.join(outputPath, "*" + outputExt)))
+    numRuns = 1
+    if(numImagesToGenerate > 0  and numImagesToGenerate > numImagesInFolder ):
+        print("numImagesToGenerate > numImagesInFolder, setting augExtWithRandomInt = True")
+        augExtWithRandomInt = True
 
-        img1 = AugmentImageWithIaa(fullImname, seq, outName)
-        if (img1 is not None):
-            cv2.imwrite(outName, img1)
-        print(fullImname + " ---> " + outName)
+    if (numImagesToGenerate == 0):  # skip
+        return 0
+    elif(numImagesToGenerate < 0 or numImagesToGenerate == numImagesInFolder): # exact
+        listImages2generate = glob.glob(os.path.join(inputPath, inputWildcard))
+    elif (numImagesToGenerate <numImagesInFolder): #subset
+        listImages2generate = random.sample(glob.glob(os.path.join(inputPath, inputWildcard)),k = numImagesToGenerate)
+    else: # superset
+        listImages2generate = random.choices(glob.glob(os.path.join(inputPath, inputWildcard)),k = numImagesToGenerate)
+
+    for fullImname in listImages2generate:
+        try:
+            seq = augSeq
+            imname = os.path.basename(fullImname)
+            noextName = os.path.splitext(imname)[0]
+            outName = os.path.join(outputPath, noextName + outputExt)
+            if(augExtWithRandomInt):
+                randIntStr =str(np.random.randint(0,100000)+1000000)[1:]
+                outName = os.path.join(outputPath, noextName + "_" + randIntStr + "_" + outputExt)
+
+            img1 = AugmentImageWithIaa(fullImname, seq, outName)
+            if (img1 is not None):
+                cv2.imwrite(outName, img1)
+            print(fullImname + " ---> " + outName)
+        except:
+            print(fullImname + " ---> FAILED !!!")
+
+
+
+
+
 
     if(recurs):
         ff = folders_in(inputPath)
         for fldr in ff:
             AugFolderInFoderOut(os.path.join(inputPath,fldr), inputWildcard,
-                                os.path.join(outputPath,fldr), augSeq, recurs)
+                                os.path.join(outputPath,fldr),outputExt, augSeq, recurs)
 
     return 0
 
@@ -77,24 +105,29 @@ seqChromAbber = iaa.Sequential([
         ),
 ])
 
-seq4color = iaa.SomeOf((1, 2),[
-    iaa.Crop(px=(0, 5)),
-    iaa.JpegCompression(compression=(50, 80)),
-    iaa.Multiply((0.5, 2.25)), # brightness
-    iaa.GammaContrast((0.5, 2)), # mostly not changing color names
+seq4color = iaa.SomeOf((1, 3),[
+    iaa.Crop(px=(0, 3)),
+    iaa.JpegCompression(compression=(40, 60)),
+    iaa.OneOf([
+        #iaa.Multiply((0.5, 2)),  # brightness
+        iaa.GammaContrast((0.5, 2)),  # mostly not changing color names
+        iaa.MultiplySaturation((0.5, 2.5)),  # 0 = gray, 10 = crazy color
+        iaa.MultiplyAndAddToBrightness(mul=(0.6, 1.7), add=(-20, 20)),
+        iaa.WithColorspace(
+                to_colorspace="HSV",
+                from_colorspace="RGB",
+                children=iaa.WithChannels(0,iaa.Add((5, 15))
+                                          )
+            ),
+    ]),
+
     iaa.Sharpen(alpha=(0.0, 1.0), lightness=(0.75, 1.5)), # makes that ugly black and white lines like in our camera
     iaa.PiecewiseAffine(scale=(0.025, 0.075)), # elastic distortion (for color training)
     iaa.ElasticTransformation(alpha=(0.1, 2.0), sigma=random.choice(np.arange(0.15,1,0.1))), # creates artistic ripples effect
     iaa.imgcorruptlike.DefocusBlur(severity=random.choice(range(5))+1),
-    iaa.MultiplySaturation((0.5, 2.5)), # 0 = gray, 10 = crazy color
-    iaa.MultiplyAndAddToBrightness(mul=(0.5, 2), add=(-30, 30)),
+
     iaa.Sometimes(0.2, seqChromAbber),
-    iaa.WithColorspace(
-        to_colorspace="HSV",
-        from_colorspace="RGB",
-        children=iaa.WithChannels(0,iaa.Add((5, 15))
-                                  )
-    ),
+
     ], random_order=True)
 
 
@@ -128,13 +161,16 @@ seq4atr = iaa.Sequential(
 
 if __name__ == "__main__":
 
-    #inputPath = "e:/projects/MB2/cppFlowATR/media/filterUCLA/"
-    inputPath = "/home/borisef/projects/cppFlowATR/media/spliced/"
-    inputWildcard = "*.tif"
+    inputPath = "f:/cm/Data/UnifiedTest/yellow/"
+    #inputPath = "/home/borisef/projects/cppFlowATR/media/spliced/"
+    inputWildcard = "*.png"
 
     # inputPath = "e:/projects/MB2/cppFlowATR/media/color/"
     # inputWildcard = "*.png"
-    outputPath ="/home/borisef/temp/temp1"
-    #outputExt = "tif"
-    recurs = True
-    AugFolderInFoderOut(inputPath, inputWildcard,outputPath, seq4atr,recurs)
+    #outputPath ="/home/borisef/temp/temp1"
+    outputPath = "e:/projects/MB2/img_utils/temp1/"
+    outputExt = "_aug.png"
+    recurs = False
+    generatePerFolder = -1
+    augExtWithRandomInt = False
+    AugFolderInFoderOut(inputPath, inputWildcard,outputPath,outputExt, seq4color,recurs, generatePerFolder,augExtWithRandomInt)
