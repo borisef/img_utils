@@ -105,8 +105,8 @@ seqChromAbber = iaa.Sequential([
         ),
 ])
 
-seq4color = iaa.SomeOf((1, 3),[
-    iaa.Crop(px=(0, 3)),
+seq4color = iaa.SomeOf((1, 2),[
+    #iaa.Crop(px=(0, 3)),
     iaa.JpegCompression(compression=(40, 60)),
     iaa.OneOf([
         #iaa.Multiply((0.5, 2)),  # brightness
@@ -126,7 +126,7 @@ seq4color = iaa.SomeOf((1, 3),[
     iaa.ElasticTransformation(alpha=(0.1, 2.0), sigma=random.choice(np.arange(0.15,1,0.1))), # creates artistic ripples effect
     iaa.imgcorruptlike.DefocusBlur(severity=random.choice(range(5))+1),
 
-    iaa.Sometimes(0.2, seqChromAbber),
+    iaa.Sometimes(0.1, seqChromAbber),
 
     ], random_order=True)
 
