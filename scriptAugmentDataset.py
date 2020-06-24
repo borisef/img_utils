@@ -30,13 +30,13 @@ elif pwd.getpwuid(os.getuid())[0] == 'koby_a':  # In case of a linux platform - 
 # (Train data folder, Augmented Train data folder, number images)
 factorS = 0.2
 augParams=[
-    ("UnifiedTrain/black", "UnifiedTrain/black/aug", 7000*factorS*0.3),
-    ("UnifiedTrain/blue", "UnifiedTrain/blue/aug", 12000*factorS*1),
-    ("UnifiedTrain/gray", "UnifiedTrain/gray/aug", 5000*factorS*0.2),
-    ("UnifiedTrain/green","UnifiedTrain/green/aug", 13000*factorS*0.2),
-    ("UnifiedTrain/red","UnifiedTrain/red/aug", 12000*factorS*0.1),
-    ("UnifiedTrain/white","UnifiedTrain/white/aug", 0*factorS),
-    ("UnifiedTrain/yellow", "UnifiedTrain/yellow/aug", 12000*factorS*0.2)
+    ("UnifiedTrain/black", "UnifiedTrain/black/aug", 0),#7000*factorS*0.3),
+    ("UnifiedTrain/blue", "UnifiedTrain/blue/aug", 4000),#12000*factorS*1),
+    ("UnifiedTrain/gray", "UnifiedTrain/gray/aug", 0),#5000*factorS*0.2),
+    ("UnifiedTrain/green","UnifiedTrain/green/aug", 4000),#13000*factorS*0.2),
+    ("UnifiedTrain/red","UnifiedTrain/red/aug", 0),#12000*factorS*0.1),
+    ("UnifiedTrain/white","UnifiedTrain/white/aug", 1000),#0*factorS),
+    ("UnifiedTrain/yellow", "UnifiedTrain/yellow/aug", 1000),#12000*factorS*0.2)
 ]
 
 augExtension = "_aug.png"
