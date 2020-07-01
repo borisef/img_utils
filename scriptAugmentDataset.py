@@ -29,15 +29,25 @@ elif pwd.getpwuid(os.getuid())[0] == 'koby_a':  # In case of a linux platform - 
 
 # (Train data folder, Augmented Train data folder, number images)
 factorS = 0.2
-augParams=[
-    ("UnifiedTrain/black", "UnifiedTrain/black/aug", 0),#7000*factorS*0.3),
-    ("UnifiedTrain/blue", "UnifiedTrain/blue/aug", 4000),#12000*factorS*1),
-    ("UnifiedTrain/gray", "UnifiedTrain/gray/aug", 0),#5000*factorS*0.2),
-    ("UnifiedTrain/green","UnifiedTrain/green/aug", 4000),#13000*factorS*0.2),
-    ("UnifiedTrain/red","UnifiedTrain/red/aug", 0),#12000*factorS*0.1),
-    ("UnifiedTrain/white","UnifiedTrain/white/aug", 1000),#0*factorS),
-    ("UnifiedTrain/yellow", "UnifiedTrain/yellow/aug", 1000),#12000*factorS*0.2)
+augParamsTrain=[
+    ("Kobi/train_colorDB_without_truncation_CLEAN/black", "UnifiedTrain/black/aug", 1500),#7000*factorS*0.3),
+    ("Kobi/train_colorDB_without_truncation_CLEAN/blue", "UnifiedTrain/blue/aug", 5000),#12000*factorS*1),
+    ("Kobi/train_colorDB_without_truncation_CLEAN/gray", "UnifiedTrain/gray/aug", 1000),#5000*factorS*0.2),
+    ("Kobi/train_colorDB_without_truncation_CLEAN/green","UnifiedTrain/green/aug", 1000),#13000*factorS*0.2),
+    ("UnifiedTrain/green", "UnifiedTrain/green/aug", 6000),  # 13000*factorS*0.2),
+    ("Kobi/train_colorDB_without_truncation_CLEAN/red","UnifiedTrain/red/aug", 4000),#12000*factorS*0.1),
+    ("Kobi/train_colorDB_without_truncation_CLEAN/white","UnifiedTrain/white/aug", 0),#0*factorS),
+    #("Kobi/train_colorDB_without_truncation_CLEAN/yellow", "UnifiedTrain/yellow/aug", 500),#12000*factorS*0.2)
+    #("UnifiedTrain/yellow", "UnifiedTrain/yellow/aug", 2500),#12000*factorS*0.2)
 ]
+
+augParamsTest=[
+    ("UnifiedTest/blue", "UnifiedTest/blue/aug", 500),
+    ("UnifiedTest/green", "UnifiedTest/green/aug", 200),
+    ("UnifiedTest/red", "UnifiedTest/red/aug", 100),
+    #("UnifiedTest/yellow", "UnifiedTest/yellow/aug", 200)
+]
+augParams = augParamsTrain
 
 augExtension = "_aug.png"
 inputWildcard = "*.png"
