@@ -25,6 +25,23 @@ def resizeTo(im, w):
 	im1 = cv2.resize(im,(cc, rr), interpolation= cv2.INTER_LANCZOS4)
 	return im1, rsz
 
+def RadialAlphaBlend(im1,im2):
+	cols = im1.shape[0]
+	rows = im1.shape[1]
+	cx, cy = rows/2,  cols/2
+	R2 = cx*cx + cy*cy
+	imrez = im1.copy()
+	for x in range(cols):
+		for y in range(rows):
+			d = (cx - x)*(cx - x) + (cy - y)*(cy - y)
+			alph = 1- d/R2
+			alph = max(min(alph,1.0), 0)
+			imrez[x,y,:] = im1[x,y,:]*alph + im2[x,y,:]*(1-alph)
+
+
+
+	return imrez
+
 def DrawTarget2Rectangle(im,rect,targetsFolderOrImg = None, extraParamsDict = None ):
 	if(os.path.isdir(targetsFolderOrImg)):
 		imgs = glob.glob(targetsFolderOrImg + '/*.jpg')
@@ -45,7 +62,12 @@ def DrawTarget2Rectangle(im,rect,targetsFolderOrImg = None, extraParamsDict = No
 	alpha = 1
 	if ((extraParams is not None) and (extraParams["alpha"])):
 		alpha = extraParams["alpha"]
+
+	# tempIm = RadialAlphaBlend(restim, im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)])
+	# im[rect[0][1]:(rect[0][1] + rr), rect[0][0]:(rect[0][0] + cc)] = tempIm
+
 	im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)] = restim*alpha + im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)]*(1 - alpha)
+
 	return (im, targetImg)
 
 
