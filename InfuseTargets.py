@@ -44,14 +44,44 @@ def RadialAlphaBlend(im1,im2):
 
 def DrawTarget2Rectangle(im,rect,targetsFolderOrImg = None, extraParamsDict = None ):
 	if(os.path.isdir(targetsFolderOrImg)):
-		imgs = glob.glob(targetsFolderOrImg + '/*.jpg')
-		targetImg = random.choice(imgs)
+		formts = ['png', 'tif' , 'jpg']
+		imgs = []
+		for img_fmt in formts:
+			imgs += glob.glob(f'{targetsFolderOrImg}/*.{img_fmt}')
+		targetImg = random.choice(imgs) if imgs != [] else ""
 	else:
 		targetImg = targetsFolderOrImg
 
+	if targetImg == "":
+		return (im, targetImg)
 
+	"""
+	# Convert uint8 to float
+	foreground = foreground.astype(float)
+	background = background.astype(float)
+	
+	# Normalize the alpha mask to keep intensity between 0 and 1
+	alpha = alpha.astype(float)/255
+	
+	# Multiply the foreground with the alpha matte
+	foreground = cv2.multiply(alpha, foreground)
+	
+	# Multiply the background with ( 1 - alpha )
+	background = cv2.multiply(1.0 - alpha, background)
+	
+	# Add the masked foreground and background.
+	outImage = cv2.add(foreground, background)
+	"""
 
-	tim = cv2.imread(targetImg)
+	tim = cv2.imread(targetImg, cv2.IMREAD_UNCHANGED)
+	if tim.shape[2] == 4:
+		alpha_channel = tim[..., -1]
+		alpha_channel = cv2.merge([alpha_channel, alpha_channel, alpha_channel])
+		alpha_channel = alpha_channel.astype(np.float32) / 255.0
+		tim = tim[..., :-1]  #drop alpha channel
+	else:
+		alpha_channel = np.ones_like(tim[..., :3], dtype=np.float32)
+
 	cc = rect[1][0] - rect[0][0]
 	rr = rect[1][1] - rect[0][1]
 
@@ -59,14 +89,19 @@ def DrawTarget2Rectangle(im,rect,targetsFolderOrImg = None, extraParamsDict = No
 		rr = int(tim.shape[0]*cc/tim.shape[1])
 
 	restim = cv2.resize(tim, (cc, rr), interpolation=cv2.INTER_LANCZOS4)
-	alpha = 1
-	if ((extraParams is not None) and (extraParams["alpha"])):
-		alpha = extraParams["alpha"]
+	rest_alpha = cv2.resize(alpha_channel, (cc, rr), interpolation=cv2.INTER_LANCZOS4)
+	#alpha = 1
+	#if ((extraParams is not None) and (extraParams["alpha"])):
+	#	alpha = extraParams["alpha"]
 
 	# tempIm = RadialAlphaBlend(restim, im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)])
 	# im[rect[0][1]:(rect[0][1] + rr), rect[0][0]:(rect[0][0] + cc)] = tempIm
-
-	im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)] = restim*alpha + im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)]*(1 - alpha)
+	roi = im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)].astype(np.float32)
+	foreground = cv2.multiply(rest_alpha, restim.astype(np.float32))
+	background = cv2.multiply(1.0 - rest_alpha, roi)
+	blend = cv2.add(foreground, background).astype(np.uint8)
+	im[rect[0][1]:(rect[0][1] + rr), rect[0][0]:(rect[0][0] + cc)] = blend
+	#im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)] = (restim*rest_alpha + im[rect[0][1]:(rect[0][1]+rr), rect[0][0]:(rect[0][0]+cc)]*(1 - rest_alpha)).astype(np.uint8)
 
 	return (im, targetImg)
 
@@ -143,13 +178,15 @@ def InfuseInSingleImage(inputName, outputFolder, infuseParams = None):
 	#
 	zz = whileTrueWindow("Select large regions for targets use c(ontinue),d(elete last),r(estart)", imsmall, clone_small)[0]
 	zz_orig = (np.array(zz) / rsz).astype(int)
-
+	nameWind = "Select object locations use c(ontinue),d(elete last),r(estart)"
+	pp = ""
+	pp_orig = ""
 	for rp_orig in zz_orig:  # for each subwindow
 		# rp_orig = (np.array(rp)/rsz).astype(int)
 		roi_orig = orig_image[rp_orig[0][1]:rp_orig[1][1], rp_orig[0][0]:rp_orig[1][0]]
 		roi_small, rsz1 = resizeTo(roi_orig, 1000)
 		clone_roi_small = roi_small.copy()
-		pp, list_imgs = whileTrueWindow("Select object locations use c(ontinue),d(elete last),r(estart)", roi_small, clone_roi_small, DrawTarget2Rectangle, extraParams)
+		pp, list_imgs = whileTrueWindow(nameWind, roi_small, clone_roi_small, DrawTarget2Rectangle, extraParams)
 		if(len(pp)==0):
 			continue
 		# correct pp to orig_image
@@ -158,6 +195,8 @@ def InfuseInSingleImage(inputName, outputFolder, infuseParams = None):
 		pp_orig[:, :, 1] = pp_orig[:, :, 1] + rp_orig[0][1]
 		for i, p in enumerate(pp_orig):
 			# cv2.rectangle(clone_orig, (p[0,0],p[0,1]), (p[1,0],p[1,1]), (0, 255, 0), 2)
+			if list_imgs[i] == "":
+				continue
 			clone_orig = DrawTarget2Rectangle(clone_orig, p, list_imgs[i], infuseParams)[0]  #
 			# add rows to DF
 			nn = os.path.basename(imgName)
@@ -176,15 +215,17 @@ def InfuseInSingleImage(inputName, outputFolder, infuseParams = None):
 	return outDF, clone_orig
 
 
-
-
-#====================================
-
 if __name__ == "__main__":
-
-	targetsFolder = "targets"
+	targetsFolder = "crops/aug"
 	backgroundsFolder = "backgrounds"
 	outputFolder = "outputInfuseTargets"
+
+	for required_folder in [targetsFolder, backgroundsFolder, outputFolder]:
+		if os.path.isdir(required_folder):
+			continue
+		if os.path.lexists(required_folder):
+			raise Exception("Required folder: '%s'. But it is already exists and it is not a folder" % required_folder)
+		os.makedirs(required_folder, exist_ok=True)
 
 	outDF = pd.DataFrame([], columns=table_columns)
 

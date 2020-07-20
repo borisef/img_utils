@@ -9,7 +9,7 @@ class struct():
     pass
 
 def AugmentImageWithIaa(fullImname, seq, outName):
-    img = cv2.imread(fullImname)
+    img = cv2.imread(fullImname, cv2.IMREAD_UNCHANGED)
     img1 = seq(images=[img])
     return img1[0]
 
@@ -129,6 +129,81 @@ seq4color = iaa.SomeOf((1, 2),[
     iaa.Sometimes(0.1, seqChromAbber),
 
     ], random_order=True)
+
+
+seq4color_khaki = iaa.SomeOf((1, 4),[
+    #iaa.Crop(px=(0, 3)),
+    iaa.JpegCompression(compression=(40, 60)),
+    iaa.OneOf([
+        #iaa.Multiply((0.5, 2)),  # brightness
+        iaa.GammaContrast((0.75, 1.5)),  # mostly not changing color names
+        iaa.MultiplySaturation((0.75, 1.5)),  # 0 = gray, 10 = crazy color
+        iaa.MultiplyAndAddToBrightness(mul=(0.75, 1.5), add=(-10, 10))
+    ]),
+
+    iaa.Sharpen(alpha=(0.0, 1.0), lightness=(0.75, 1.25)), # makes that ugly black and white lines like in our camera
+    iaa.PiecewiseAffine(scale=(0.025, 0.075)), # elastic distortion (for color training)
+    iaa.ElasticTransformation(alpha=(0.1, 2.0), sigma=random.choice(np.arange(0.15,1,0.1))), # creates artistic ripples effect
+    iaa.imgcorruptlike.DefocusBlur(severity=random.choice(range(3))+1),
+
+    #add rotations, flips, shifts, crops
+    iaa.OneOf([
+        iaa.Fliplr(),
+        iaa.Flipud(),
+        iaa.Affine(rotate=(-20, 20), mode=ia.ALL, cval=(0, 255)),
+        iaa.Rotate((-45, 45), mode=ia.ALL, cval=(0, 255)),
+        iaa.TranslateX(px=(-5, 5),mode=ia.ALL, cval=(0, 255)),
+        iaa.TranslateY(px=(-5, 5),mode=ia.ALL, cval=(0, 255))
+    ]),
+
+
+    iaa.Sometimes(0.1, seqChromAbber),
+
+    ], random_order=True)
+
+
+seq4color_exam1 = iaa.SomeOf((1, 4),[
+    iaa.Crop(px=(0, 3)),
+    iaa.JpegCompression(compression=(60, 80)),
+    iaa.OneOf([
+        #iaa.Multiply((0.5, 2)),  # brightness
+        iaa.GammaContrast((0.90, 1.15)),  # mostly not changing color names
+        #iaa.MultiplySaturation((0.75, 1.5)),  # 0 = gray, 10 = crazy color
+        iaa.MultiplyAndAddToBrightness(mul=(0.95, 1.1), add=(-5, 5))
+    ]),
+
+    #iaa.Sharpen(alpha=(0.0, 1.0), lightness=(0.75, 1.25)), # makes that ugly black and white lines like in our camera
+    iaa.PiecewiseAffine(scale=(0.025, 0.075)), # elastic distortion (for color training)
+    #iaa.ElasticTransformation(alpha=(0.1, 2.0), sigma=random.choice(np.arange(0.15,1,0.1))), # creates artistic ripples effect
+    iaa.imgcorruptlike.DefocusBlur(severity=random.choice(range(3))+1),
+
+    #add rotations, flips, shifts, crops
+    iaa.OneOf([
+        iaa.Fliplr(),
+        iaa.Flipud(),
+        iaa.Affine(rotate=(-20, 20), mode=ia.ALL, cval=(0, 255)),
+        iaa.Rotate((-45, 45), mode=ia.ALL, cval=(0, 255)),
+        iaa.TranslateX(px=(-5, 5),mode=ia.ALL, cval=(0, 255)),
+        iaa.TranslateY(px=(-5, 5),mode=ia.ALL, cval=(0, 255))
+    ]),
+
+
+    #iaa.Sometimes(0.1, seqChromAbber),
+
+    ], random_order=True)
+
+
+seq4margema = iaa.OneOf([
+        iaa.ElasticTransformation(alpha=(0.1, 2.0), sigma=random.choice(np.arange(0.15,1,0.1))), # creates artistic ripples effect
+        iaa.Multiply((0.5, 1.75)), # brightness all channels
+        iaa.MultiplyAndAddToBrightness(mul=(0.5, 1.5), add=(-20, 10)),
+        iaa.GaussianBlur(sigma=(1, 3)), # blur images with a sigma of 0 to 3.0
+        iaa.GammaContrast((0.4, 2.5)), # mostly not changing color names
+        iaa.MultiplySaturation((0.25, 4.5)), # o = gray, 10 = c
+        iaa.Fliplr(1),
+        iaa.Affine(rotate=(-45, 45)),
+        iaa.Affine(shear=(-20, 20))
+    ])
 
 
 seq4atr = iaa.Sequential(

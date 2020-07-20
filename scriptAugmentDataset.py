@@ -24,6 +24,7 @@ if platform.system() == "Windows":  # In case of a windows platform - Boris
     dataPrePath = r"e:\\projects\\MB2\\cm\\Data\\"
 elif pwd.getpwuid(os.getuid())[0] == 'borisef':  # In case of a linux platform - Boris
     dataPrePath = "/home/borisef/projects/cm/Data/"
+    dataPrePath = "/home/borisef/projects/img_utils/"
 elif pwd.getpwuid(os.getuid())[0] == 'koby_a':  # In case of a linux platform - Koby
     dataPrePath = r'/media/koby_a/Data/databases/MagicBox/color_net/DB'
 
@@ -47,13 +48,33 @@ augParamsTest=[
     ("UnifiedTest/red", "UnifiedTest/red/aug", 100),
     #("UnifiedTest/yellow", "UnifiedTest/yellow/aug", 200)
 ]
-augParams = augParamsTrain
+
+augParamsKhaki = [
+    ('khaki/test/', 'khaki/test/aug', 100),
+    ('khaki/train/', 'khaki/train/aug', 2000)
+]
+
+
+augParamsExam1 = [
+                    ("Exam1_train/ykhaki","Exam1_train/ykhaki_aug", 100),
+                    ("Exam1_train/white","Exam1_train/white_aug", 500),
+                    ("Exam1_train/red", "Exam1_train/red_aug", 600),
+                    ("Exam1_train/green", "Exam1_train/green_aug", 200),
+                    ("Exam1_train/gray","Exam1_train/gray_aug", 1000),
+                    ("Exam1_train/blue", "Exam1_train/blue_aug", 200),
+                    ("Exam1_train/black", "Exam1_train/black_aug", 500)
+                    ]
+
+augParamsMargema = [("crops","crops/aug", 300)]
+
+augParams = augParamsMargema
 
 augExtension = "_aug.png"
 inputWildcard = "*.png"
 augExtWithRandomInt = True
 cleanOutExistingFolder = True
-
+#augSeq = augFolderImages.seq4color
+augSeq = augFolderImages.seq4margema
 
 for tt in augParams:
     folderIn = os.path.join(dataPrePath, tt[0])
@@ -63,7 +84,7 @@ for tt in augParams:
     augFolderImages.AugFolderInFoderOut(inputPath=folderIn, outputPath=folderOut,
                                         inputWildcard = inputWildcard,
                                         outputExt = augExtension,
-                                        augSeq=augFolderImages.seq4color,
+                                        augSeq=augSeq,
                                         recurs = False,
                                         augExtWithRandomInt = augExtWithRandomInt,
                                         numImagesToGenerate= sizeOut)
